@@ -3,6 +3,7 @@
 A complete guide to set up, run, and automate the Price Drop Tracker on Ubuntu/Linux.
 
 ![alt text](assets/price-tracker.jpeg)
+![alt text](assets/github-action.jpeg)
 ---
 
 ## Prerequisites
