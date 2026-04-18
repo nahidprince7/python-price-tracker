@@ -1,0 +1,80 @@
+# ─────────────────────────────────────────────────────────────────
+# Price Drop Tracker — GitHub Actions Workflow
+# Runs automatically every day at 09:00 UTC
+# ─────────────────────────────────────────────────────────────────
+
+name: Price Drop Tracker
+
+# ── When to run ──────────────────────────────────────────────────
+on:
+  schedule:
+    # Cron format: minute hour day month weekday
+    # "0 9 * * *" = at 09:00 UTC, every day
+    # Use https://crontab.guru to build custom schedules
+    - cron: "0 9 * * *"
+
+  # Lets you click "Run workflow" manually from GitHub UI
+  # Useful for testing without waiting for the cron
+  workflow_dispatch:
+
+# ── The job ──────────────────────────────────────────────────────
+jobs:
+  check-price:
+
+    # GitHub provides a free Ubuntu VM for every run
+    runs-on: ubuntu-latest
+
+    # Stop the job if it runs longer than 10 minutes
+    # Prevents hanging Selenium sessions from eating your quota
+    timeout-minutes: 10
+
+    steps:
+
+      # Step 1: Download your repo code onto the VM
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Step 2: Install Python 3.11 on the VM
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          # Cache pip downloads — speeds up subsequent runs
+          cache: "pip"
+
+      # Step 3: Install Chrome browser (needed for Selenium)
+      - name: Install Chrome
+        uses: browser-actions/setup-chrome@v1
+        with:
+          chrome-version: stable
+
+      # Step 4: Install all Python packages from requirements.txt
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
+
+      # Step 5: Run the tracker script
+      # Secrets are injected as environment variables — NEVER hardcode tokens
+      - name: Run price tracker
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          # Add your products here too so .env isn't needed on GitHub
+          PRODUCT_1_URL: ${{ secrets.PRODUCT_1_URL }}
+          PRODUCT_1_THRESHOLD: ${{ secrets.PRODUCT_1_THRESHOLD }}
+          PRODUCT_1_NAME: ${{ secrets.PRODUCT_1_NAME }}
+          PRODUCT_2_URL: ${{ secrets.PRODUCT_2_URL }}
+          PRODUCT_2_THRESHOLD: ${{ secrets.PRODUCT_2_THRESHOLD }}
+          PRODUCT_2_NAME: ${{ secrets.PRODUCT_2_NAME }}
+        run: python tracker.py
+
+      # Step 6 (optional): Upload screenshot if script fails
+      # Great for debugging — download it from the Actions tab
+      - name: Upload debug screenshot on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: debug-screenshot
+          path: debug_screenshot.png
+          retention-days: 3
