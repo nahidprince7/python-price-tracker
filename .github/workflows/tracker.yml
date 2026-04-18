@@ -5,13 +5,13 @@ on:
     branches: [ "master", "main" ]
   schedule:
     - cron: "0 9 * * *"
-  workflow_dispatch: # এই লাইনটিই 'Run workflow' বাটনটি আনে
+  workflow_dispatch:
 
 jobs:
   check-price:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
+      - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Set up Python
@@ -23,8 +23,13 @@ jobs:
         run: |
           pip install requests beautifulsoup4 python-dotenv
 
-      - name: Run tracker
+      - name: Run price tracker
         env:
+          # এখানে আমরা GitHub Secrets থেকে তথ্য নিয়ে এনভায়রনমেন্ট ভেরিয়েবল তৈরি করছি
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          # আপনার কোড এই ৩টি ভেরিয়েবল খুঁজছে, তাই এগুলো যোগ করা জরুরি:
+          PRODUCT_1_URL: ${{ secrets.PRODUCT_1_URL }}
+          PRODUCT_1_THRESHOLD: ${{ secrets.PRODUCT_1_THRESHOLD }}
+          PRODUCT_1_NAME: ${{ secrets.PRODUCT_1_NAME }}
         run: python tracker.py
